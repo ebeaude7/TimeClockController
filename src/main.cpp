@@ -268,110 +268,6 @@ void displayTime (const RtcDateTime& now) {
 }
 
 
-uint8_t getDaysFromNow(const scheduledAlarm_t& alarm, const RtcDateTime& now) {
-    uint8_t daysFromNow;
-    
-    uint8_t dayOfWeek = now.DayOfWeek();    
-    uint8_t hour = now.Hour();
-    uint8_t minute = now.Minute();   
-
-    Serial.println("--------------------------------");
-      
-    if (alarm.dayOfWeek == 255 || (alarm.dayOfWeek == dayOfWeek && alarm.hour > hour && alarm.minute > minute)) {
-        daysFromNow = 0;
-        Serial.print("case 1 ");
-    } else if (alarm.hour < hour || alarm.minute < minute) {
-        daysFromNow = substractOneDay(getDaysDiff(alarm.dayOfWeek, dayOfWeek));
-        Serial.print("case 2 ");
-    } else if (alarm.dayOfWeek == dayOfWeek && (alarm.hour < hour || alarm.minute < minute)) {
-        daysFromNow = DAYS_IN_A_WEEK;
-        Serial.print("case 3 ");
-    } else {
-        daysFromNow = getDaysDiff(alarm.dayOfWeek, dayOfWeek);
-        Serial.print("case 4 ");
-    }  
-    
-    Serial.print("Alarm day of week: ");  
-    Serial.print(alarm.dayOfWeek);
-    Serial.print(" | Current day of week: ");  
-    Serial.print(dayOfWeek);
-    Serial.print(" | Days from now ");
-    Serial.println(daysFromNow);  
-
-    return daysFromNow;     
-}
-
-uint8_t getHoursFromNow(const scheduledAlarm_t& alarm, const RtcDateTime& now) {
-    uint8_t hoursFromNow = 0;
-
-    uint8_t hour = now.Hour();
-    uint8_t minute = now.Minute();  
-
-    if (alarm.hour == 255 || (alarm.hour == hour && alarm.minute > minute)) {
-        hoursFromNow = 0;
-        Serial.print("case 1 ");
-    }  else if (addOneHour(hour) && alarm.minute < minute) {
-        hoursFromNow = 0;
-        Serial.print("case 2 ");      
-    } else if (alarm.hour == hour && alarm.minute < minute) {
-        hoursFromNow = HOURS_IN_A_DAY;
-        Serial.print("case 3 ");      
-    } else if (alarm.hour < hour) {
-        hoursFromNow = HOURS_IN_A_DAY - alarm.dayOfWeek + hour;
-        Serial.print("case 4 ");
-    } else {
-        hoursFromNow = alarm.hour - hour;
-        Serial.print("case 5 ");
-    }
-
-    Serial.println("Alarm hour: ");  
-    Serial.print(alarm.hour);
-    Serial.print(" | Current hour: ");  
-    Serial.print(hour);
-    Serial.print(" | Hours from now ");
-    Serial.println(hoursFromNow);  
-
-    return hoursFromNow;
-}
-
-long getSecondsfromNow(const scheduledAlarm_t& alarm, const RtcDateTime& now) {
-    long remainingSec = 0;
-
-    uint8_t dayOfWeek = now.DayOfWeek();
-    uint8_t hour = now.Hour();
-    uint8_t minute = now.Minute();
-    uint8_t second = now.Second();
-
-    uint8_t daysFromNow = getDaysFromNow(alarm, now);
-    uint8_t hoursFromNow = getHoursFromNow(alarm, now);
-
-    if (alarm.minute != 255 && alarm.minute > minute) {
-        remainingSec = (A_MINUTE_IN_SEC - second + (alarm.minute - minute) * A_MINUTE_IN_SEC) - A_MINUTE_IN_SEC;
-    } else {
-        if (alarm.minute == 255) {
-            // patch second
-
-        } else {
-            // substract remaining minutes from next hour  
-            if (hour == 0) {
-               hour = 23;
-               if (dayOfWeek == 0) {
-                 dayOfWeek = 6;
-               } else {
-                 dayOfWeek = dayOfWeek -1;
-               }
-            } else {
-               hour = hour - 1;
-            }
-        }
-    }
-
-    remainingSec = remainingSec + (daysFromNow * A_DAY_IN_SEC) + (hoursFromNow * An_HOUR_IN_SEC);
-        
-    if (remainingSec == 0) return -1;    
-    return remainingSec;
-}
-
 // return remaining seconds before next alarm
 // return -1 if no alarm
 long selectNextAlarm(const RtcDateTime& now) {
@@ -381,7 +277,7 @@ long selectNextAlarm(const RtcDateTime& now) {
 
     for (int i=0; i < MAX_ALARM; i++) {
         if (sAlarm[i].enable == 1) {
-            secondFromNow = getSecondsfromNow(sAlarm[i], now);
+            secondFromNow = getSecondsfromNow(sAlarm[i], now.DayOfWeek(), now.Hour(), now.Minute(), now.Second());
             Serial.print("Second from now: ");
             Serial.println(secondFromNow);
 

@@ -19,15 +19,7 @@
 #define ALARM_DURATION_ADDRESS 1
 #define ALARM_START_ADDRESS 2
 
-/**
- * Alarm structure.
- */
-typedef struct scheduledAlarm {
-    uint8_t enable;
-    uint8_t dayOfWeek;
-    uint8_t hour;
-    uint8_t minute;
-} scheduledAlarm_t;
+#include "scheduledAlarm.h"
 
 
 // -----------------------------------------------------------------
@@ -46,7 +38,7 @@ typedef struct scheduledAlarm {
 #define MAX_ALARM 25
 #define ALARM_DURATION_IN_SEC 3
 
-// Set to 1 to ajust clock
+// Set to 1 to ajust clock when uploading code
 #define AJUST_CLOCK 0
 
 // Clock is set from compiled time. It should be a little bit behind real time.

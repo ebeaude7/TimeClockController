@@ -110,8 +110,6 @@ void getSavedAlarm(scheduledAlarm_t* scheduledAlarm, int alarmNumber) {
     }
 }
 
-
-
 void restoreFactorySchedule(void) {
 
     if (CONFIG_SERIAL > getConfigSerial()) {

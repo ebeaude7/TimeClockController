@@ -10,6 +10,7 @@
 #define _TIME_CLOCK_UTILITY_CONTROLLER_H_
 
 #include <stdint.h>
+#include "scheduledAlarm.h"
 
 #define DAYS_IN_A_WEEK 7
 #define HOURS_IN_A_DAY 24
@@ -22,5 +23,9 @@ uint8_t addOneDay (uint8_t day);
 uint8_t substractOneDay (uint8_t day);
 uint8_t addOneHour (uint8_t hour);
 uint8_t getDaysDiff(uint8_t alarmDay, uint8_t today);
+
+uint8_t getDaysFromNow(const scheduledAlarm_t& alarm, uint8_t dayOfWeek, uint8_t hour, uint8_t minute);
+uint8_t getHoursFromNow(const scheduledAlarm_t& alarm, uint8_t hour, uint8_t minute); 
+long getSecondsfromNow(const scheduledAlarm_t& alarm, uint8_t dayOfWeek, uint8_t hour, uint8_t minute, uint8_t second); 
 
 #endif
