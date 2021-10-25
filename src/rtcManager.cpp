@@ -5,14 +5,17 @@
  * 
  * Copyright (c) 2021 Eric BEaudet
  */
+#ifndef UNIT_TEST // disable program main loop while unit testing in progress
 
 #include <Arduino.h>
 #include "rtcManager.h"
+
 
 RtcDS3231<TwoWire> Rtc(Wire);
 EepromAt24c32<TwoWire> RtcEeprom(Wire);
 
 void updateClockFirstRun(void);
+void restoreFactorySchedule(void);
 
 uint8_t init_rtcManager(void) {
 
@@ -40,6 +43,8 @@ uint8_t init_rtcManager(void) {
     // just clear them to your needed state
     Rtc.Enable32kHzPin(false);
     Rtc.SetSquareWavePin(DS3231SquareWavePin_ModeClock, false); 
+
+    restoreFactorySchedule();
 
     return errorCode;
 }
@@ -77,65 +82,55 @@ uint8_t validRtcTime(void) {
 void updateClockFirstRun(void) {
 
     RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
-    RtcDateTime now = Rtc.GetDateTime();
-
-    if (now < compiled) {
+    
+    if (AJUST_CLOCK) {
         //Serial.println("RTC is older than compile time!  (Updating DateTime)");
-        Rtc.SetDateTime(compiled);
+        
+        Rtc.SetDateTime(compiled + CLOCK_OFFSET_IN_SEC);
     }    
 }
 
-void restoreFactorySchedule(void) {
-/* comment out on a second run to see that the info is stored long term */
-    // // Store something in memory on the Eeprom
+uint8_t getAlarmDuration(void) {
+    return RtcEeprom.GetMemory(ALARM_DURATION_ADDRESS);
+}
 
-    // // store starting address of string
-    // RtcEeprom.SetMemory(0, stringAddr); 
-    // // store the string, nothing longer than 32 bytes due to paging
-    // uint8_t written = RtcEeprom.SetMemory(stringAddr, (const uint8_t*)data, sizeof(data) - 1); // remove the null terminator strings add
-    // // store the length of the string
-    // RtcEeprom.SetMemory(1, written); // store the 
-/* end of comment out section */    
+uint8_t getConfigSerial(void) {
+    return RtcEeprom.GetMemory(SERIAL_ADDRESS);
+}
 
-/*
-      // get the offset we stored our data from address zero
-      uint8_t address = RtcEeprom.GetMemory(0);
-      if (address != stringAddr)
-      {
-          Serial.print("address didn't match ");
-          Serial.println(address);
-      }
-      
-      {
-          // get the size of the data from address 1
-          uint8_t count = RtcEeprom.GetMemory(1);
-          uint8_t buff[64];
+void getSavedAlarm(scheduledAlarm_t* scheduledAlarm, int alarmNumber) {
 
-          // get our data from the address with the given size
-          uint8_t gotten = RtcEeprom.GetMemory(address, buff, count);
-
-          if (gotten != count ||
-              count != sizeof(data) - 1) // remove the extra null terminator strings add
-          {
-              Serial.print("something didn't match, count = ");
-              Serial.print(count, DEC);
-              Serial.print(", gotten = ");
-              Serial.print(gotten, DEC);
-              Serial.println();
-          }
-          Serial.print("data read (");
-          Serial.print(gotten);
-          Serial.print(") = \"");
-          for (uint8_t ch = 0; ch < gotten; ch++)
-          {
-              Serial.print((char)buff[ch]);
-          }
-          Serial.println("\"");
-      }
-*/
+    uint8_t buff[4];
+    for (int i=ALARM_START_ADDRESS; i < alarmNumber + ALARM_START_ADDRESS; i++ ){
+        buff[4] = RtcEeprom.GetMemory(i, buff, 4);
+        scheduledAlarm[i-ALARM_START_ADDRESS].enable = buff[0];
+        scheduledAlarm[i-ALARM_START_ADDRESS].dayOfWeek = buff[1];
+        scheduledAlarm[i-ALARM_START_ADDRESS].hour = buff[2];
+        scheduledAlarm[i-ALARM_START_ADDRESS].minute = buff[3];
+    }
 }
 
 
 
+void restoreFactorySchedule(void) {
 
+    if (CONFIG_SERIAL > getConfigSerial()) {
 
+        scheduledAlarm_t myAlarm[] = FACTORY_ALARM;    
+
+        RtcEeprom.SetMemory(SERIAL_ADDRESS, CONFIG_SERIAL); 
+        RtcEeprom.SetMemory(ALARM_DURATION_ADDRESS, ALARM_DURATION_IN_SEC); // store the 
+
+        uint8_t buff[4];
+        for (int i=ALARM_START_ADDRESS; i < MAX_ALARM+ALARM_START_ADDRESS; i++) {
+            buff[0] = myAlarm[i-ALARM_START_ADDRESS].enable;
+            buff[1] = myAlarm[i-ALARM_START_ADDRESS].dayOfWeek;
+            buff[2] = myAlarm[i-ALARM_START_ADDRESS].hour;
+            buff[3] = myAlarm[i-ALARM_START_ADDRESS].minute;
+
+            RtcEeprom.SetMemory(i, (const uint8_t*)buff, 4); // store the 
+        }
+    }   
+}
+
+#endif

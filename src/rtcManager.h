@@ -12,6 +12,7 @@
 #include <Wire.h>
 #include <RtcDS3231.h>
 #include <EepromAT24C32.h>
+#include "defaultConfiguration.h"
 
 // Interrupt Pin Lookup Table
 // (copied from Arduino Docs)
@@ -28,10 +29,15 @@
 #define RtcSquareWavePin 2
 #define RtcSquareWaveInterrupt 0 // Uno
 
+
 // rtc function
 // -----------------------------------------------------
 uint8_t init_rtcManager(void);
 uint8_t validRtcTime(void);
+
+uint8_t getConfigSerial(void);
+uint8_t getAlarmDuration(void);
+void getSavedAlarm(scheduledAlarm_t* scheduledAlarm, int alarmNumber);
 
 RtcDateTime getCurrentDateTime(void);
 

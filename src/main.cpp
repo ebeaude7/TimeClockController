@@ -17,12 +17,18 @@ Configuration is done with an external software using serial communication.
 
 */
 
+#ifndef UNIT_TEST // disable program main loop while unit testing in progress
+
 #include <Arduino.h>
 #include <SPI.h>
 
 #include "ssd1305.h"
-#include "Device/rtcManager.h"
+#include "rtcManager.h"
+#include "timeClockControllerUtility.h"
 #include "defaultConfiguration.h"
+
+// relay config
+#define RELAY_PIN 4
 
 // Display configuration
 #define WIDTH     128
@@ -40,18 +46,25 @@ uint8_t oled_buf[WIDTH * HEIGHT / 8];
 
 #define countof(a) (sizeof(a) / sizeof(a[0]))
 
-
 volatile uint16_t interuptCount = 0;
 volatile bool interuptFlag = false;
 
+long nextAlarm = -1;
+long alarmRunningCountdown = -1;
 
+uint8_t alarmDuration = ALARM_DURATION_IN_SEC;
+//scheduledAlarm_t sAlarm[] = FACTORY_ALARM;
+scheduledAlarm_t sAlarm[] = TEST_ALARM;
 
 const char data[] = "What time is it in Greenwich?";
 const uint16_t stringAddr = 64; // stored on page boundary
 
+void runAlarmMonitor(const RtcDateTime& now);
 void printDateTime(const RtcDateTime& dt);
 void printRtcError(uint8_t rtcErrorCode);
-void displayTime ();
+void displayTime (const RtcDateTime& now);
+void printConfig (void);
+long selectNextAlarm(const RtcDateTime& now);
 
 void ISR_ATTR InteruptServiceRoutine()
 {
@@ -63,7 +76,10 @@ void ISR_ATTR InteruptServiceRoutine()
 }
 
 void setup() {
-  
+
+    // initialize digital pin as an output.
+    pinMode(RELAY_PIN, OUTPUT);
+
     // set the interupt pin to input mode
     pinMode(RtcSquareWavePin, INPUT);
 
@@ -76,12 +92,13 @@ void setup() {
     // setup rtc and Atchip
     init_rtcManager();
 
-    // Serial.print("compiled: ");
-    // Serial.print(__DATE__);
-    // Serial.println(__TIME__);
+    // init settings
+    //alarmDuration = getAlarmDuration();
+    //getSavedAlarm(sAlarm, MAX_ALARM);
+    printConfig();
 
+    
     // Display init
-    /* display an image of bitmap matrix */
     SSD1305_begin();
 }
 
@@ -89,26 +106,76 @@ void loop() {
 
     printRtcError(validRtcTime());
     
-    if (interuptFlag) {
+    if (interuptFlag) {      
         interuptFlag = false;
-        displayTime();  
+
+        RtcDateTime now = getCurrentDateTime();
+
+        runAlarmMonitor(now);
+        displayTime(now);  
     }    
 }
 
-void printDateTime(const RtcDateTime& dt)
-{
-    char datestring[20];
+void runAlarmMonitor (const RtcDateTime& now) {
+    
+    nextAlarm--; 
+    if (alarmRunningCountdown < 0 && nextAlarm == 0) {        
+        alarmRunningCountdown = ALARM_DURATION_IN_SEC;
+    } else if (nextAlarm > 0 || alarmRunningCountdown > 0) {
+       // do nothing but keep next alarm at 0
+       if (alarmRunningCountdown > 0) {
+          nextAlarm = 0;
+       }
+    } else {        
+        nextAlarm = selectNextAlarm(now);  
+    }
+
+    // run the alarm 
+    if (alarmRunningCountdown > 0) {
+        digitalWrite(RELAY_PIN, HIGH);
+        alarmRunningCountdown--;
+    } else {
+        digitalWrite(RELAY_PIN, LOW);
+        alarmRunningCountdown--;
+    }
+}
+
+void printConfig(void) {
+    // print config serial
+    Serial.print("config serial : ");
+    Serial.println(getConfigSerial());
+
+    // print alarm duration
+    Serial.print("Alarm duration : ");
+    Serial.println(getAlarmDuration());
+
+    Serial.println("Print configured alarm list to serial port:");
+    for (int i=0; i < MAX_ALARM; i++) {
+        Serial.print(sAlarm[i].enable);
+        Serial.print(" ");
+        Serial.print(sAlarm[i].dayOfWeek);
+        Serial.print(" ");
+        Serial.print(sAlarm[i].hour);
+        Serial.print(" ");
+        Serial.println(sAlarm[i].minute);
+    }
+}
+
+void printDateTime(const RtcDateTime& dt) {
+    char datestring[23];
 
     snprintf_P(datestring, 
             countof(datestring),
-            PSTR("%02u/%02u/%04u %02u:%02u:%02u"),
-            dt.Month(),
+            PSTR("%02u %02u/%02u/%04u %02u:%02u:%02u"),
+            dt.DayOfWeek(),
             dt.Day(),
+            dt.Month(),           
             dt.Year(),
             dt.Hour(),
             dt.Minute(),
             dt.Second() );
-    Serial.print(datestring);
+
+    Serial.println(datestring);
 }
 
 void printRtcError(uint8_t rtcErrorCode) {
@@ -128,29 +195,206 @@ void printRtcError(uint8_t rtcErrorCode) {
     }  
 }
 
-void displayTime () {
-        Serial.print("Interrupt count : ");  
-        Serial.println(interuptCount);      
+void displayTime (const RtcDateTime& now) {
+    
+    char datestring[9];
+    char remainingSecString[12];
+    char alarmOffSecString[3];
 
-        RtcDateTime now = getCurrentDateTime();
+    snprintf_P(datestring, 
+          countof(datestring),
+          PSTR("%02u:%02u:%02u"),          
+          now.Hour(),
+          now.Minute(),
+          now.Second() );  
 
-        printDateTime(now);
-        Serial.println();
+    snprintf_P(remainingSecString, 
+          countof(remainingSecString),
+          PSTR("%06u sec."),
+          nextAlarm);           
 
-        char datestring[9];
+    snprintf_P(alarmOffSecString, 
+          countof(alarmOffSecString),
+          PSTR("%02u"),
+          alarmRunningCountdown+1);             
 
-        snprintf_P(datestring, 
-              countof(datestring),
-              PSTR("%02u:%02u:%02u"),
-              now.Hour(),
-              now.Minute(),
-              now.Second() );    
+    // clear the screen
+    SSD1305_clear(oled_buf);
 
-        SSD1305_clear(oled_buf);
+    // display remaining seconds before next alarm
+    SSD1305_bitmap(10, 4, Alarm88, 8, 8, oled_buf); 
+    if (nextAlarm < 0 && alarmRunningCountdown < 0) {
+        SSD1305_string(30, 2, "Aucune alarme", 12, 1, oled_buf);
+    } else {
+        SSD1305_string(30, 2, remainingSecString, 12, 1, oled_buf);       
+    }
 
-        SSD1305_bitmap(10, 4, Alarm88, 8, 8, oled_buf); 
-        SSD1305_string(20, 2, "(3)", 12, 1, oled_buf);
-        SSD1305_string(25, 16, datestring, 16, 1, oled_buf);
+    // display remaining seconds before alarm go off
+    if (alarmRunningCountdown >= 0) {
+        SSD1305_string(100, 2, alarmOffSecString, 12, 1, oled_buf); 
+        SSD1305_bitmap(100, 16, Signal816, 16, 8, oled_buf); 
+    } 
+    
+    // Display day of the week
+    switch (now.DayOfWeek()) {
+        case 0 :
+          SSD1305_string(10, 16, "Dim", 12, 1, oled_buf);
+          break;
+        case 1 :
+          SSD1305_string(10, 16, "Lun", 12, 1, oled_buf);
+          break;
+        case 2 :
+          SSD1305_string(10, 16, "Mar", 12, 1, oled_buf);
+          break;
+        case 3 :
+          SSD1305_string(10, 16, "Mer", 12, 1, oled_buf);
+          break;
+        case 4 :
+          SSD1305_string(10, 16, "Jeu", 12, 1, oled_buf);
+          break;
+        case 5 :
+          SSD1305_string(10, 16, "Ven", 12, 1, oled_buf);
+          break;
+        case 6 :
+          SSD1305_string(10, 16, "Sam", 12, 1, oled_buf);
+          break;                                                            
+    }
+    
+    // Display time
+    SSD1305_string(30, 16, datestring, 16, 1, oled_buf);
 
-        SSD1305_display(oled_buf);  
+    // refresh the screen
+    SSD1305_display(oled_buf);  
 }
+
+
+uint8_t getDaysFromNow(const scheduledAlarm_t& alarm, const RtcDateTime& now) {
+    uint8_t daysFromNow;
+    
+    uint8_t dayOfWeek = now.DayOfWeek();    
+    uint8_t hour = now.Hour();
+    uint8_t minute = now.Minute();   
+
+    Serial.println("--------------------------------");
+      
+    if (alarm.dayOfWeek == 255 || (alarm.dayOfWeek == dayOfWeek && alarm.hour > hour && alarm.minute > minute)) {
+        daysFromNow = 0;
+        Serial.print("case 1 ");
+    } else if (alarm.hour < hour || alarm.minute < minute) {
+        daysFromNow = substractOneDay(getDaysDiff(alarm.dayOfWeek, dayOfWeek));
+        Serial.print("case 2 ");
+    } else if (alarm.dayOfWeek == dayOfWeek && (alarm.hour < hour || alarm.minute < minute)) {
+        daysFromNow = DAYS_IN_A_WEEK;
+        Serial.print("case 3 ");
+    } else {
+        daysFromNow = getDaysDiff(alarm.dayOfWeek, dayOfWeek);
+        Serial.print("case 4 ");
+    }  
+    
+    Serial.print("Alarm day of week: ");  
+    Serial.print(alarm.dayOfWeek);
+    Serial.print(" | Current day of week: ");  
+    Serial.print(dayOfWeek);
+    Serial.print(" | Days from now ");
+    Serial.println(daysFromNow);  
+
+    return daysFromNow;     
+}
+
+uint8_t getHoursFromNow(const scheduledAlarm_t& alarm, const RtcDateTime& now) {
+    uint8_t hoursFromNow = 0;
+
+    uint8_t hour = now.Hour();
+    uint8_t minute = now.Minute();  
+
+    if (alarm.hour == 255 || (alarm.hour == hour && alarm.minute > minute)) {
+        hoursFromNow = 0;
+        Serial.print("case 1 ");
+    }  else if (addOneHour(hour) && alarm.minute < minute) {
+        hoursFromNow = 0;
+        Serial.print("case 2 ");      
+    } else if (alarm.hour == hour && alarm.minute < minute) {
+        hoursFromNow = HOURS_IN_A_DAY;
+        Serial.print("case 3 ");      
+    } else if (alarm.hour < hour) {
+        hoursFromNow = HOURS_IN_A_DAY - alarm.dayOfWeek + hour;
+        Serial.print("case 4 ");
+    } else {
+        hoursFromNow = alarm.hour - hour;
+        Serial.print("case 5 ");
+    }
+
+    Serial.println("Alarm hour: ");  
+    Serial.print(alarm.hour);
+    Serial.print(" | Current hour: ");  
+    Serial.print(hour);
+    Serial.print(" | Hours from now ");
+    Serial.println(hoursFromNow);  
+
+    return hoursFromNow;
+}
+
+long getSecondsfromNow(const scheduledAlarm_t& alarm, const RtcDateTime& now) {
+    long remainingSec = 0;
+
+    uint8_t dayOfWeek = now.DayOfWeek();
+    uint8_t hour = now.Hour();
+    uint8_t minute = now.Minute();
+    uint8_t second = now.Second();
+
+    uint8_t daysFromNow = getDaysFromNow(alarm, now);
+    uint8_t hoursFromNow = getHoursFromNow(alarm, now);
+
+    if (alarm.minute != 255 && alarm.minute > minute) {
+        remainingSec = (A_MINUTE_IN_SEC - second + (alarm.minute - minute) * A_MINUTE_IN_SEC) - A_MINUTE_IN_SEC;
+    } else {
+        if (alarm.minute == 255) {
+            // patch second
+
+        } else {
+            // substract remaining minutes from next hour  
+            if (hour == 0) {
+               hour = 23;
+               if (dayOfWeek == 0) {
+                 dayOfWeek = 6;
+               } else {
+                 dayOfWeek = dayOfWeek -1;
+               }
+            } else {
+               hour = hour - 1;
+            }
+        }
+    }
+
+    remainingSec = remainingSec + (daysFromNow * A_DAY_IN_SEC) + (hoursFromNow * An_HOUR_IN_SEC);
+        
+    if (remainingSec == 0) return -1;    
+    return remainingSec;
+}
+
+// return remaining seconds before next alarm
+// return -1 if no alarm
+long selectNextAlarm(const RtcDateTime& now) {
+
+    long remainingSecondBeforeNextAlarm = -1;
+    long secondFromNow;
+
+    for (int i=0; i < MAX_ALARM; i++) {
+        if (sAlarm[i].enable == 1) {
+            secondFromNow = getSecondsfromNow(sAlarm[i], now);
+            Serial.print("Second from now: ");
+            Serial.println(secondFromNow);
+
+            if (remainingSecondBeforeNextAlarm == -1 || remainingSecondBeforeNextAlarm > secondFromNow) {
+
+                remainingSecondBeforeNextAlarm = secondFromNow;
+                Serial.print("Set next alarm in ");
+                Serial.println(remainingSecondBeforeNextAlarm);
+            } 
+        }
+    } 
+
+    return remainingSecondBeforeNextAlarm;
+}
+
+#endif
