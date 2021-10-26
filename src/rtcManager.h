@@ -1,7 +1,7 @@
 /*
  * File: rtcManager.h
  * Project: Device
- * Created Date: Thursday, October 21st 2021, 10:26:55 pm
+ * Created Date: Thursday, October 21st 2021, 19:26:55 pm
  * 
  * Copyright (c) 2021 Eric Beaudet
  */
@@ -40,5 +40,6 @@ uint8_t getAlarmDuration(void);
 void getSavedAlarm(scheduledAlarm_t* scheduledAlarm, int alarmNumber);
 
 RtcDateTime getCurrentDateTime(void);
+void updateSerial (void);
 
 #endif

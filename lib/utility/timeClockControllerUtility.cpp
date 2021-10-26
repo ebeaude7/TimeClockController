@@ -19,10 +19,19 @@ uint8_t substractOneDay (uint8_t day) {
     return day - 1;
 }
 
-
 uint8_t addOneHour (uint8_t hour) {
     if (hour == 23) return 0;
     return hour + 1;
+}
+
+uint8_t substractOneHour (uint8_t hour) {
+    if (hour == 0) return 23;
+    return hour - 1;
+}
+
+uint8_t substractOneMinute (uint8_t minute) {
+    if (minute == 0) return 59;
+    return minute - 1;
 }
 
 uint8_t getDaysDiff(uint8_t alarmDay, uint8_t today) {
@@ -42,107 +51,101 @@ uint8_t getDaysDiff(uint8_t alarmDay, uint8_t today) {
     return daysDiff;
 }
 
+uint8_t getHoursDiff(uint8_t alarmHour, uint8_t hour) {
+    uint8_t hoursDiff;
+
+    if (alarmHour < hour) {
+        hoursDiff = HOURS_IN_A_DAY - alarmHour + hour;
+    } else {
+        hoursDiff = alarmHour - hour;
+    }
+
+    // handle wrap around
+    if (hoursDiff > HOURS_IN_A_DAY) {
+        hoursDiff = HOURS_IN_A_DAY - (hoursDiff -HOURS_IN_A_DAY);
+    }
+
+    return hoursDiff;
+}
+
+uint8_t getMinutesOrSecondDiff(uint8_t alarmMinute, uint8_t minute) {
+    uint8_t minutesDiff;
+
+    if (alarmMinute < minute) {
+        minutesDiff = MINUTE_IN_SEC - alarmMinute + minute;
+    } else {
+        minutesDiff = alarmMinute - minute;
+    }
+
+    // handle wrap around
+    if (minutesDiff > MINUTE_IN_SEC) {
+        minutesDiff = MINUTE_IN_SEC - (minutesDiff -MINUTE_IN_SEC);
+    }
+
+    return minutesDiff;
+}
 
 uint8_t getDaysFromNow(const scheduledAlarm_t& alarm, uint8_t dayOfWeek, uint8_t hour, uint8_t minute) {
     uint8_t daysFromNow;
     
-    // uint8_t dayOfWeek = now.DayOfWeek();    
-    // uint8_t hour = now.Hour();
-    // uint8_t minute = now.Minute();   
-
-    //Serial.println("--------------------------------");
-      
     if (alarm.dayOfWeek == 255 || (alarm.dayOfWeek == dayOfWeek && alarm.hour > hour && alarm.minute > minute)) {
         daysFromNow = 0;
-        //Serial.print("case 1 ");
     } else if (alarm.hour < hour || alarm.minute < minute) {
-        daysFromNow = substractOneDay(getDaysDiff(alarm.dayOfWeek, dayOfWeek));
-       // Serial.print("case 2 ");
+        daysFromNow = substractOneDay(getDaysDiff(alarm.dayOfWeek, dayOfWeek));       
     } else if (alarm.dayOfWeek == dayOfWeek && (alarm.hour < hour || alarm.minute < minute)) {
-        daysFromNow = DAYS_IN_A_WEEK;
-        //Serial.print("case 3 ");
+        daysFromNow = DAYS_IN_A_WEEK;        
     } else {
-        daysFromNow = getDaysDiff(alarm.dayOfWeek, dayOfWeek);
-        //Serial.print("case 4 ");
+        daysFromNow = getDaysDiff(alarm.dayOfWeek, dayOfWeek);    
     }  
     
-    // Serial.print("Alarm day of week: ");  
-    // Serial.print(alarm.dayOfWeek);
-    // Serial.print(" | Current day of week: ");  
-    // Serial.print(dayOfWeek);
-    // Serial.print(" | Days from now ");
-    // Serial.println(daysFromNow);  
-
     return daysFromNow;     
 }
 
 uint8_t getHoursFromNow(const scheduledAlarm_t& alarm, uint8_t hour, uint8_t minute) {
     uint8_t hoursFromNow = 0;
 
-    // uint8_t hour = now.Hour();
-    // uint8_t minute = now.Minute();  
-
     if (alarm.hour == 255 || (alarm.hour == hour && alarm.minute > minute)) {
         hoursFromNow = 0;
-        //Serial.print("case 1 ");
-    }  else if (addOneHour(hour) && alarm.minute < minute) {
-        hoursFromNow = 0;
-        //Serial.print("case 2 ");      
+    }  else if (alarm.minute < minute) {
+        hoursFromNow = substractOneHour(getHoursDiff(alarm.hour, hour));  
     } else if (alarm.hour == hour && alarm.minute < minute) {
         hoursFromNow = HOURS_IN_A_DAY;
-        //Serial.print("case 3 ");      
-    } else if (alarm.hour < hour) {
-        hoursFromNow = HOURS_IN_A_DAY - alarm.dayOfWeek + hour;
-        //Serial.print("case 4 ");
     } else {
-        hoursFromNow = alarm.hour - hour;
-        //Serial.print("case 5 ");
+        hoursFromNow = getHoursDiff(alarm.hour, hour);
     }
-
-    // Serial.println("Alarm hour: ");  
-    // Serial.print(alarm.hour);
-    // Serial.print(" | Current hour: ");  
-    // Serial.print(hour);
-    // Serial.print(" | Hours from now ");
-    // Serial.println(hoursFromNow);  
 
     return hoursFromNow;
 }
 
-long getSecondsfromNow(const scheduledAlarm_t& alarm, uint8_t dayOfWeek, uint8_t hour, uint8_t minute, uint8_t second) {
-    long remainingSec = 0;
+uint8_t getMinutesFromNow(const scheduledAlarm_t& alarm, uint8_t minute) {
+    uint8_t minutesFromNow = 0;
 
-    // uint8_t dayOfWeek = now.DayOfWeek();
-    // uint8_t hour = now.Hour();
-    // uint8_t minute = now.Minute();
-    // uint8_t second = now.Second();
-
-    uint8_t daysFromNow = getDaysFromNow(alarm, dayOfWeek, hour, minute);
-    uint8_t hoursFromNow = getHoursFromNow(alarm, hour, minute);
-
-    if (alarm.minute != 255 && alarm.minute > minute) {
-        remainingSec = (A_MINUTE_IN_SEC - second + (alarm.minute - minute) * A_MINUTE_IN_SEC) - A_MINUTE_IN_SEC;
+    if (alarm.minute == 255) {
+        minutesFromNow = 0;
+    }  else if (alarm.minute < minute) {
+        minutesFromNow = substractOneMinute(getMinutesOrSecondDiff(alarm.minute, minute));  
+    } else if (alarm.minute == minute) {
+        // second is always 00 so always <
+        minutesFromNow = MINUTE_IN_SEC;
     } else {
-        if (alarm.minute == 255) {
-            // patch second
-
-        } else {
-            // substract remaining minutes from next hour  
-            if (hour == 0) {
-               hour = 23;
-               if (dayOfWeek == 0) {
-                 dayOfWeek = 6;
-               } else {
-                 dayOfWeek = dayOfWeek -1;
-               }
-            } else {
-               hour = hour - 1;
-            }
-        }
+        minutesFromNow = getMinutesOrSecondDiff(alarm.minute, minute);
     }
 
-    remainingSec = remainingSec + (daysFromNow * A_DAY_IN_SEC) + (hoursFromNow * An_HOUR_IN_SEC);
-        
-    if (remainingSec == 0) return -1;    
-    return remainingSec;
+    return minutesFromNow;
+}
+
+uint8_t getSecondsfromNow(uint8_t second) {
+    uint8_t secondsFromNow = 0;
+
+    if (second == 0) {
+        secondsFromNow = second;  
+    } else {
+        secondsFromNow = getMinutesOrSecondDiff(0, second);
+    }
+
+    return secondsFromNow;
+}
+
+int32_t getSecondsfromAlarm(const scheduledAlarm_t& alarm, uint8_t dayOfWeek, uint8_t hour, uint8_t minute, uint8_t second) {   
+    return getDaysFromNow(alarm, dayOfWeek, hour, minute) *  (int32_t) DAY_IN_SEC + getHoursFromNow(alarm, hour, minute) *  (int32_t) HOUR_IN_SEC + getMinutesFromNow(alarm, minute) *  (int32_t) MINUTE_IN_SEC + getSecondsfromNow(second);        
 }

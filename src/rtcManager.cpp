@@ -1,7 +1,7 @@
 /*
  * File: rtcManager.c
  * Project: Device
- * Created Date: Thursday, October 21st 2021, 10:39:49 pm
+ * Created Date: Thursday, October 21st 2021, 20:39:49 pm
  * 
  * Copyright (c) 2021 Eric BEaudet
  */
@@ -81,13 +81,10 @@ uint8_t validRtcTime(void) {
 
 void updateClockFirstRun(void) {
 
-    RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
-    
-    if (AJUST_CLOCK) {
-        //Serial.println("RTC is older than compile time!  (Updating DateTime)");
-        
-        Rtc.SetDateTime(compiled + CLOCK_OFFSET_IN_SEC);
-    }    
+    if (CONFIG_SERIAL > getConfigSerial() && AJUST_CLOCK) {
+        RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);            
+            Rtc.SetDateTime(compiled + CLOCK_OFFSET_IN_SEC);        
+    }  
 }
 
 uint8_t getAlarmDuration(void) {
@@ -114,9 +111,7 @@ void restoreFactorySchedule(void) {
 
     if (CONFIG_SERIAL > getConfigSerial()) {
 
-        scheduledAlarm_t myAlarm[] = FACTORY_ALARM;    
-
-        RtcEeprom.SetMemory(SERIAL_ADDRESS, CONFIG_SERIAL); 
+        scheduledAlarm_t myAlarm[] = FACTORY_ALARM;            
         RtcEeprom.SetMemory(ALARM_DURATION_ADDRESS, ALARM_DURATION_IN_SEC); // store the 
 
         uint8_t buff[4];
@@ -129,6 +124,12 @@ void restoreFactorySchedule(void) {
             RtcEeprom.SetMemory(i, (const uint8_t*)buff, 4); // store the 
         }
     }   
+}
+
+void updateSerial (void) {
+    if (CONFIG_SERIAL > getConfigSerial()) {
+        RtcEeprom.SetMemory(SERIAL_ADDRESS, CONFIG_SERIAL); 
+    }    
 }
 
 #endif

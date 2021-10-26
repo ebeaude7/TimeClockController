@@ -28,7 +28,8 @@ Configuration is done with an external software using serial communication.
 #include "defaultConfiguration.h"
 
 // relay config
-#define RELAY_PIN 4
+#define RELAY_PIN_TONE_1 4
+//#define RELAY_PIN_TONE_2 5
 
 // Display configuration
 #define WIDTH     128
@@ -49,14 +50,13 @@ uint8_t oled_buf[WIDTH * HEIGHT / 8];
 volatile uint16_t interuptCount = 0;
 volatile bool interuptFlag = false;
 
-long nextAlarm = -1;
-long alarmRunningCountdown = -1;
+int32_t nextAlarm = -1;
+int32_t alarmRunningCountdown = -1;
 
 uint8_t alarmDuration = ALARM_DURATION_IN_SEC;
-//scheduledAlarm_t sAlarm[] = FACTORY_ALARM;
-scheduledAlarm_t sAlarm[] = TEST_ALARM;
+scheduledAlarm_t sAlarm[] = FACTORY_ALARM;
+//scheduledAlarm_t sAlarm[] = TEST_ALARM;
 
-const char data[] = "What time is it in Greenwich?";
 const uint16_t stringAddr = 64; // stored on page boundary
 
 void runAlarmMonitor(const RtcDateTime& now);
@@ -64,7 +64,7 @@ void printDateTime(const RtcDateTime& dt);
 void printRtcError(uint8_t rtcErrorCode);
 void displayTime (const RtcDateTime& now);
 void printConfig (void);
-long selectNextAlarm(const RtcDateTime& now);
+int32_t selectNextAlarm(const RtcDateTime& now);
 
 void ISR_ATTR InteruptServiceRoutine()
 {
@@ -78,7 +78,8 @@ void ISR_ATTR InteruptServiceRoutine()
 void setup() {
 
     // initialize digital pin as an output.
-    pinMode(RELAY_PIN, OUTPUT);
+    pinMode(RELAY_PIN_TONE_1, OUTPUT);
+    // pinMode(RELAY_PIN_TONE_2, OUTPUT);
 
     // set the interupt pin to input mode
     pinMode(RtcSquareWavePin, INPUT);
@@ -97,17 +98,18 @@ void setup() {
     //getSavedAlarm(sAlarm, MAX_ALARM);
     printConfig();
 
+    // update Serial
+    updateSerial();
     
     // Display init
     SSD1305_begin();
 }
 
 void loop() {
-
-    printRtcError(validRtcTime());
-    
+        
     if (interuptFlag) {      
         interuptFlag = false;
+        printRtcError(validRtcTime());
 
         RtcDateTime now = getCurrentDateTime();
 
@@ -132,18 +134,20 @@ void runAlarmMonitor (const RtcDateTime& now) {
 
     // run the alarm 
     if (alarmRunningCountdown > 0) {
-        digitalWrite(RELAY_PIN, HIGH);
+        digitalWrite(RELAY_PIN_TONE_1, HIGH);
         alarmRunningCountdown--;
     } else {
-        digitalWrite(RELAY_PIN, LOW);
+        digitalWrite(RELAY_PIN_TONE_1, LOW);
         alarmRunningCountdown--;
     }
 }
 
 void printConfig(void) {
     // print config serial
-    Serial.print("config serial : ");
-    Serial.println(getConfigSerial());
+    Serial.print("EPROMM config serial : ");
+    Serial.print(getConfigSerial());
+    Serial.print(" Config Serial : ");
+    Serial.println(CONFIG_SERIAL);
 
     // print alarm duration
     Serial.print("Alarm duration : ");
@@ -270,14 +274,14 @@ void displayTime (const RtcDateTime& now) {
 
 // return remaining seconds before next alarm
 // return -1 if no alarm
-long selectNextAlarm(const RtcDateTime& now) {
+int32_t selectNextAlarm(const RtcDateTime& now) {
 
-    long remainingSecondBeforeNextAlarm = -1;
-    long secondFromNow;
+    int32_t remainingSecondBeforeNextAlarm = -1;
+    int32_t secondFromNow;
 
     for (int i=0; i < MAX_ALARM; i++) {
         if (sAlarm[i].enable == 1) {
-            secondFromNow = getSecondsfromNow(sAlarm[i], now.DayOfWeek(), now.Hour(), now.Minute(), now.Second());
+            secondFromNow = getSecondsfromAlarm(sAlarm[i], now.DayOfWeek(), now.Hour(), now.Minute(), now.Second());
             Serial.print("Second from now: ");
             Serial.println(secondFromNow);
 

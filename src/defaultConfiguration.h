@@ -1,7 +1,7 @@
 /**
  * File: defaultConfiguration.h
  * Project: Time clock controller
- * Created Date: Wednesday, October 20th 2021, 12:36:14 pm
+ * Created Date: Wednesday, October 20th 2021, 19:36:14 pm
  * 
  * Copyright (c) 2021 Eric Beaudet
  * 
@@ -10,6 +10,7 @@
  * Define a default configuration.
  * Application will load this configuration if AT24C32 module is empty
  * or serial is greater than the one in memory and write it to the module.
+ * 
  */
 
 #ifndef _DEFAULT_CONFIGURATION_H_
@@ -21,6 +22,16 @@
 
 #include "scheduledAlarm.h"
 
+/**
+ * Wiring reference for the siren :
+ *
+ * How Do I Connect Red, Yellow, & White Wires To a Siren?
+ * The following is instructions to connect wires from a hardwired siren.
+ *
+ * The white wire is 12V negative (GND).
+ * The yellow positive wire is for normal steady alarm tone.
+ * The red wire is alternate positive and is used to produce the warble tone associated with fire alarms. 
+ */
 
 // -----------------------------------------------------------------
 // CONFIG START HERE ()
@@ -34,12 +45,13 @@
 
 
 // MUST BE INCREMENTED TO +1 FOR CONFIG TO BE WRITTEN
-#define CONFIG_SERIAL 1
+#define CONFIG_SERIAL 7
 #define MAX_ALARM 25
 #define ALARM_DURATION_IN_SEC 3
 
-// Set to 1 to ajust clock when uploading code
-#define AJUST_CLOCK 0
+// Set to 1 to ajust clock when uploading code. 
+// **! Serial must be incremented !**
+#define AJUST_CLOCK 1
 
 // Clock is set from compiled time. It should be a little bit behind real time.
 // Ajust the difference, and upload code again.
@@ -48,6 +60,11 @@
 // Array of alarms.
 // Format is 255 for all
 // for days, sunday = 0, monday 1...
+// 
+// enable values are :
+//      0   disabled
+//      1   tone 1  (steady sound yellow wire)
+//
 //      enable dayOfWeek     hour    minute  
 // --------------------------------------------------
 // ex:   1       255        255         0      --> every hour at 0 minute. 
@@ -84,10 +101,10 @@
                         }
 
 #define TEST_ALARM  {  \
-                        {0,255,14,52},  \
-                        {0,255,15,2}, \
+                        {0,255,9,0},  \
+                        {0,255,9,10}, \
                         {0,1,9,15}, \
-                        {1,1,16,50}, \
+                        {0,255,17,00}, \
                         {0,2,17,40},\
                         {0,2,12,45},\
                         {0,255,14,0}, \
@@ -100,9 +117,9 @@
                         {0,255,20,0}, \
                         {0,255,20,40},\
                         {0,255,20,45},\
-                        {0,255,23,0}, \
-                        {0,255,23,40},\
-                        {0,255,23,45},\
+                        {1,255,23,0}, \
+                        {1,255,23,40},\
+                        {1,255,23,45},\
                         {0,255,9,15}, \
                         {0,255,9,15}, \
                         {0,255,9,15}, \
