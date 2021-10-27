@@ -113,14 +113,6 @@ void loop() {
 
         RtcDateTime now = getCurrentDateTime();
 
-        // printDateTime(now);
-        // Serial.print("E32 : ");
-        // Serial.print(now.Epoch32Time());
-
-        // Serial.print(" Total second32: ");
-        // Serial.println(now.TotalSeconds());
-
-
         runAlarmMonitor(now);
         displayTime(now);  
     }    
@@ -309,7 +301,7 @@ int32_t selectNextAlarm(const RtcDateTime& now) {
             if (remainingSecondBeforeNextAlarm == 0 || remainingSecondBeforeNextAlarm > secondFromNow) {
 
                 remainingSecondBeforeNextAlarm = secondFromNow;
-                Serial.print("Set next alarm in ");
+                Serial.print("Set new next alarm in ");
                 Serial.print(remainingSecondBeforeNextAlarm);
                 Serial.print(" at ");
                 Serial.print(sAlarm[i].dayOfWeek);
