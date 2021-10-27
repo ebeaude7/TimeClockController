@@ -32,6 +32,6 @@ uint8_t getDaysFromNow(const scheduledAlarm_t& alarm, uint8_t dayOfWeek, uint8_t
 uint8_t getHoursFromNow(const scheduledAlarm_t& alarm, uint8_t hour, uint8_t minute); 
 uint8_t getMinutesFromNow(const scheduledAlarm_t& alarm, uint8_t minute);
 uint8_t getSecondsfromNow(uint8_t second);
-int32_t getSecondsfromAlarm(const scheduledAlarm_t& alarm, uint8_t dayOfWeek, uint8_t hour, uint8_t minute, uint8_t second); 
+int32_t getSecondsFromAlarm(const scheduledAlarm_t& alarm, uint8_t dayOfWeek, uint8_t hour, uint8_t minute, uint8_t second); 
 
 #endif

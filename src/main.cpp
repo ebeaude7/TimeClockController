@@ -24,7 +24,7 @@ Configuration is done with an external software using serial communication.
 
 #include "ssd1305.h"
 #include "rtcManager.h"
-#include "timeClockControllerUtility.h"
+#include "timeClockControllerCalc.h"
 #include "defaultConfiguration.h"
 
 // relay config
@@ -112,6 +112,14 @@ void loop() {
         printRtcError(validRtcTime());
 
         RtcDateTime now = getCurrentDateTime();
+
+        // printDateTime(now);
+        // Serial.print("E32 : ");
+        // Serial.print(now.Epoch32Time());
+
+        // Serial.print(" Total second32: ");
+        // Serial.println(now.TotalSeconds());
+
 
         runAlarmMonitor(now);
         displayTime(now);  
@@ -276,25 +284,44 @@ void displayTime (const RtcDateTime& now) {
 // return -1 if no alarm
 int32_t selectNextAlarm(const RtcDateTime& now) {
 
-    int32_t remainingSecondBeforeNextAlarm = -1;
-    int32_t secondFromNow;
+    uint32_t remainingSecondBeforeNextAlarm = -1;
+    uint32_t secondFromNow;
 
     for (int i=0; i < MAX_ALARM; i++) {
         if (sAlarm[i].enable == 1) {
-            secondFromNow = getSecondsfromAlarm(sAlarm[i], now.DayOfWeek(), now.Hour(), now.Minute(), now.Second());
-            Serial.print("Second from now: ");
+            secondFromNow = getSecondstoAlarm(sAlarm[i], now.DayOfWeek(), now.Hour(), now.Minute(), now.Second());
+            Serial.print("Alarm time : ");
+                        
+            Serial.print(sAlarm[i].dayOfWeek);
+            Serial.print("  ");
+            Serial.print(sAlarm[i].hour);
+            Serial.print(":");
+            Serial.print(sAlarm[i].minute);
+            
+            Serial.print(" Now in sec: ");
+            Serial.print(getNumberOfSeconds((scheduledAlarm_t){1, now.DayOfWeek(), now.Hour(), now.Minute()}, now.Second()));
+            Serial.print(" Alarm in Second: ");
+            Serial.print(getNumberOfSeconds(sAlarm[i], now.Second()));
+            Serial.print(" Second from now: ");
             Serial.println(secondFromNow);
+            
 
-            if (remainingSecondBeforeNextAlarm == -1 || remainingSecondBeforeNextAlarm > secondFromNow) {
+            if (remainingSecondBeforeNextAlarm == 0 || remainingSecondBeforeNextAlarm > secondFromNow) {
 
                 remainingSecondBeforeNextAlarm = secondFromNow;
                 Serial.print("Set next alarm in ");
-                Serial.println(remainingSecondBeforeNextAlarm);
+                Serial.print(remainingSecondBeforeNextAlarm);
+                Serial.print(" at ");
+                Serial.print(sAlarm[i].dayOfWeek);
+                Serial.print("  ");
+                Serial.print(sAlarm[i].hour);
+                Serial.print(":");
+                Serial.println(sAlarm[i].minute);                
             } 
         }
     } 
 
-    return remainingSecondBeforeNextAlarm;
+    return remainingSecondBeforeNextAlarm;    
 }
 
 #endif

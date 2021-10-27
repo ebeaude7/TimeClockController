@@ -1,16 +1,14 @@
 /*
  * File: test_main.cpp
  * Project: test
- * Created Date: Monday, October 25th 2021, 19:21:39 am
- * Author: Eric Beaudet (ebeaudet@noovelia.com)
+ * Created Date: Monday, October 25th 2021, 19:21:39 am 
  * 
- * Copyright (c) 2021 EJS
+ * Copyright (c) 2021 Eric Beaudet
  */
 
 #include <unity.h>
 #include "timeClockControllerUtility.h"
 
-#define UNITY_SUPPORT_64
 
 //#ifdef UNIT_TEST
 
@@ -487,7 +485,37 @@ void testGetSecondsfromAlarm_in_10_min(void) {
 
     int32_t expected = 600;
 
-    int32_t result = getSecondsfromAlarm(alarm, dayOfWeek, hour, minute, second);
+    int32_t result = getSecondsFromAlarm(alarm, dayOfWeek, hour, minute, second);
+
+    TEST_ASSERT_EQUAL_INT32(expected, result);
+}
+
+void testGetSecondsfromAlarm_in_10_minBefore0(void) {
+    scheduledAlarm_t alarm = {1,255,255,0};
+
+    uint8_t dayOfWeek = 5;
+    uint8_t hour = 17;    
+    uint8_t minute = 50;
+    uint8_t second = 0;
+
+    int32_t expected = 600;
+
+    int32_t result = getSecondsFromAlarm(alarm, dayOfWeek, hour, minute, second);
+
+    TEST_ASSERT_EQUAL_INT32(expected, result);
+}
+
+void testGetSecondsfromAlarm_in_10(void) {
+    scheduledAlarm_t alarm = {1,255,255,0};
+
+    uint8_t dayOfWeek = 5;
+    uint8_t hour = 17;    
+    uint8_t minute = 49;
+    uint8_t second = 30;
+
+    int32_t expected = 630;
+
+    int32_t result = getSecondsFromAlarm(alarm, dayOfWeek, hour, minute, second);
 
     TEST_ASSERT_EQUAL_INT32(expected, result);
 }
@@ -513,7 +541,7 @@ void testGetSecondsfromAlarm_in_24h(void) {
 
     uint32_t expected = 86400;
 
-    uint32_t result = getSecondsfromAlarm(alarm, dayOfWeek, hour, minute, second);
+    uint32_t result = getSecondsFromAlarm(alarm, dayOfWeek, hour, minute, second);
 
     TEST_ASSERT_EQUAL_INT32(expected, result);
 }
@@ -528,7 +556,7 @@ void testGetSecondsfromAlarm_0(void) {
 
     uint32_t expected = 40510;
 
-    uint32_t result = getSecondsfromAlarm(alarm, dayOfWeek, hour, minute, second);
+    uint32_t result = getSecondsFromAlarm(alarm, dayOfWeek, hour, minute, second);
 
     TEST_ASSERT_EQUAL_INT32(expected, result);
 }
@@ -543,9 +571,39 @@ void testGetSecondsfromAlarm_max(void) {
 
     uint32_t expected = 604799;
 
-    uint32_t result = getSecondsfromAlarm(alarm, dayOfWeek, hour, minute, second);
+    uint32_t result = getSecondsFromAlarm(alarm, dayOfWeek, hour, minute, second);
 
     TEST_ASSERT_EQUAL_INT32(expected, result);
+}
+
+void testGetSecondsfromAlarm_1h(void) {
+    scheduledAlarm_t alarm = {1,255,0,0};
+
+    uint8_t dayOfWeek = 0;
+    uint8_t hour = 23;    
+    uint8_t minute = 0;
+    uint8_t second = 0;
+
+    uint32_t expected = 3600;
+
+    uint32_t result = getSecondsFromAlarm(alarm, dayOfWeek, hour, minute, second);
+
+    TEST_ASSERT_EQUAL_INT32(expected, result);
+}
+
+void testGetSecondsfromAlarm_1h_beforeNoon(void) {
+    scheduledAlarm_t alarm = {1,255,12,0};
+
+    uint8_t dayOfWeek = 0;
+    uint8_t hour = 11;    
+    uint8_t minute = 0;
+    uint8_t second = 0;
+
+    uint32_t expected = 3600;
+
+    uint32_t result = getSecondsFromAlarm(alarm, dayOfWeek, hour, minute, second);
+
+    TEST_ASSERT_EQUAL_INT32(expected, result);    
 }
 
 // ------------------------------------------
@@ -554,62 +612,65 @@ void testGetSecondsfromAlarm_max(void) {
 int main( int argc, char **argv) {
     UNITY_BEGIN();
         
-        RUN_TEST(testAddOneDay_wrap);
-        RUN_TEST(testAddOneDay_normal);
+        // RUN_TEST(testAddOneDay_wrap);
+        // RUN_TEST(testAddOneDay_normal);
 
-        RUN_TEST(testSubstractOneDay_wrap);
-        RUN_TEST(testSubstractOneDay_normal);
+        // RUN_TEST(testSubstractOneDay_wrap);
+        // RUN_TEST(testSubstractOneDay_normal);
 
-        RUN_TEST(testAddOneHour_wrap);
-        RUN_TEST(testAddOneHour_normal);     
+        // RUN_TEST(testAddOneHour_wrap);
+        // RUN_TEST(testAddOneHour_normal);     
 
-        RUN_TEST(testSubstractOneHour_wrap);
-        RUN_TEST(testSubstractOneHour_normal);
+        // RUN_TEST(testSubstractOneHour_wrap);
+        // RUN_TEST(testSubstractOneHour_normal);
 
-        RUN_TEST(testSubstractOneMinute_wrap);
-        RUN_TEST(testSubstractOneMinute_normal);        
+        // RUN_TEST(testSubstractOneMinute_wrap);
+        // RUN_TEST(testSubstractOneMinute_normal);        
 
-        RUN_TEST(testGetDaysDiff_dim_lun);
-        RUN_TEST(testGetDaysDiff_lun_dim);
-        RUN_TEST(testGetDaysDiff_normalUp);
-        RUN_TEST(testGetDaysDiff_normalDn);
+        // RUN_TEST(testGetDaysDiff_dim_lun);
+        // RUN_TEST(testGetDaysDiff_lun_dim);
+        // RUN_TEST(testGetDaysDiff_normalUp);
+        // RUN_TEST(testGetDaysDiff_normalDn);
 
-        RUN_TEST(testGetHoursDiff_beginDay);
-        RUN_TEST(testGetHoursDiff_endDay);
-        RUN_TEST(testGetHoursDiff_normalUp);
-        RUN_TEST(testGetHoursDiff_normalDn);    
+        // RUN_TEST(testGetHoursDiff_beginDay);
+        // RUN_TEST(testGetHoursDiff_endDay);
+        // RUN_TEST(testGetHoursDiff_normalUp);
+        // RUN_TEST(testGetHoursDiff_normalDn);    
 
-        RUN_TEST(testGetMinutesDiff_beginHour);
-        RUN_TEST(testGetMinutesDiff_endHour);
-        RUN_TEST(testGetMinutesDiff_normalUp);
-        RUN_TEST(testGetMinutesDiff_normalDn);            
-        RUN_TEST(testGetMinutesDiff_middle);   
+        // RUN_TEST(testGetMinutesDiff_beginHour);
+        // RUN_TEST(testGetMinutesDiff_endHour);
+        // RUN_TEST(testGetMinutesDiff_normalUp);
+        // RUN_TEST(testGetMinutesDiff_normalDn);            
+        // RUN_TEST(testGetMinutesDiff_middle);   
 
-        RUN_TEST(testGetDaysFromNow_AlarmAtLaterHourThanNowUp);        
-        RUN_TEST(testGetDaysFromNow_AlarmAtLaterHourThanNowDn);
-        RUN_TEST(testGetDaysFromNow_AlarmAtEarlierHourThanNowUp);        
-        RUN_TEST(testGetDaysFromNow_AlarmAtEarlierHourThanNowDn);        
-        RUN_TEST(testGetDaysFromNow_AlarmAtEarlierMinuteThanNowUp);        
-        RUN_TEST(testGetDaysFromNow_AlarmAtEarlierMinuteThanNowDn); 
+        // RUN_TEST(testGetDaysFromNow_AlarmAtLaterHourThanNowUp);        
+        // RUN_TEST(testGetDaysFromNow_AlarmAtLaterHourThanNowDn);
+        // RUN_TEST(testGetDaysFromNow_AlarmAtEarlierHourThanNowUp);        
+        // RUN_TEST(testGetDaysFromNow_AlarmAtEarlierHourThanNowDn);        
+        // RUN_TEST(testGetDaysFromNow_AlarmAtEarlierMinuteThanNowUp);        
+        // RUN_TEST(testGetDaysFromNow_AlarmAtEarlierMinuteThanNowDn); 
 
-        RUN_TEST(testGetHoursFromNow_AlarmAtLaterMinuteThanNowUp);        
-        RUN_TEST(testGetHoursFromNow_AlarmAtLaterMinuteThanNowDn);
-        RUN_TEST(testGetHoursFromNow_AlarmAtEarlierMinuteThanNowUp);        
-        RUN_TEST(testGetHoursFromNow_AlarmAtEarlierHourThanNowDn);       
+        // RUN_TEST(testGetHoursFromNow_AlarmAtLaterMinuteThanNowUp);        
+        // RUN_TEST(testGetHoursFromNow_AlarmAtLaterMinuteThanNowDn);
+        // RUN_TEST(testGetHoursFromNow_AlarmAtEarlierMinuteThanNowUp);        
+        // RUN_TEST(testGetHoursFromNow_AlarmAtEarlierHourThanNowDn);       
 
-        RUN_TEST(testGetMinutesFromNow_AlarmAtSameMinuteThanNow);        
-        RUN_TEST(testGetMinutesFromNow_AlarmAtLaterMinuteThanNowUp);
-        RUN_TEST(testGetMinutesFromNow_AlarmAtEarlierHourThanNowDn);       
+        // RUN_TEST(testGetMinutesFromNow_AlarmAtSameMinuteThanNow);        
+        // RUN_TEST(testGetMinutesFromNow_AlarmAtLaterMinuteThanNowUp);
+        // RUN_TEST(testGetMinutesFromNow_AlarmAtEarlierHourThanNowDn);       
 
-        RUN_TEST(testGetSecondsfromNow_AlarmAtSameSecondThanNow);        
-        RUN_TEST(testGetSecondsfromNow_AlarmAtLaterSecondThanNowUp);
-        RUN_TEST(testGetSecondsfromNow_AlarmAtEarlierSecondThanNowDn);            
+        // RUN_TEST(testGetSecondsfromNow_AlarmAtSameSecondThanNow);        
+        // RUN_TEST(testGetSecondsfromNow_AlarmAtLaterSecondThanNowUp);
+        // RUN_TEST(testGetSecondsfromNow_AlarmAtEarlierSecondThanNowDn);            
 
-        RUN_TEST(testGetSecondsfromAlarm_in_10_min);
-        RUN_TEST(testGetMinutesFromNow);
-        RUN_TEST(testGetSecondsfromAlarm_0);
-        RUN_TEST(testGetSecondsfromAlarm_max);
-                             
+        // RUN_TEST(testGetSecondsfromAlarm_in_10_min);
+        // RUN_TEST(testGetSecondsfromAlarm_in_10_minBefore0);
+        // RUN_TEST(testGetSecondsfromAlarm_in_10);
+        // RUN_TEST(testGetMinutesFromNow);
+        // RUN_TEST(testGetSecondsfromAlarm_0);
+        // RUN_TEST(testGetSecondsfromAlarm_max);
+        // RUN_TEST(testGetSecondsfromAlarm_1h);
+        // RUN_TEST(testGetSecondsfromAlarm_1h_beforeNoon);                             
     UNITY_END();
 }
 

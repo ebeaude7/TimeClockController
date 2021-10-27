@@ -146,6 +146,40 @@ uint8_t getSecondsfromNow(uint8_t second) {
     return secondsFromNow;
 }
 
-int32_t getSecondsfromAlarm(const scheduledAlarm_t& alarm, uint8_t dayOfWeek, uint8_t hour, uint8_t minute, uint8_t second) {   
-    return getDaysFromNow(alarm, dayOfWeek, hour, minute) *  (int32_t) DAY_IN_SEC + getHoursFromNow(alarm, hour, minute) *  (int32_t) HOUR_IN_SEC + getMinutesFromNow(alarm, minute) *  (int32_t) MINUTE_IN_SEC + getSecondsfromNow(second);        
+int32_t getSecondsFromAlarm(const scheduledAlarm_t& alarm, uint8_t dayOfWeek, uint8_t hour, uint8_t minute, uint8_t second) {   
+    int32_t secondsFromAlarm = 0;
+
+    uint8_t dayDiff = getDaysDiff(alarm.dayOfWeek, dayOfWeek);
+    uint8_t hourDiff = getHoursDiff(alarm.hour, hour);
+    uint8_t minuteDiff = getMinutesOrSecondDiff(alarm.minute, minute);
+    uint8_t secondDiff = getMinutesOrSecondDiff(0, second);
+
+    uint8_t dayInSec = getDaysFromNow(alarm, dayOfWeek, hour, minute);
+    uint8_t hourInsec = getHoursFromNow(alarm, hour, minute);
+    uint8_t minuteInSec = getMinutesFromNow(alarm, minute);
+    uint8_t secondInSec = getSecondsfromNow(second);
+
+    // if (dayInSec > 0 && getDaysDiff(alarm.dayOfWeek, dayOfWeek) < dayInSec) {
+    //     secondsFromAlarm = (dayInSec - 1) * (int32_t) DAY_IN_SEC;     
+    // } else {
+    //     secondsFromAlarm = dayInSec * (int32_t) DAY_IN_SEC;     
+    // }
+
+    // if (hourInsec > 0 && getHoursDiff(alarm.hour, hour) == hourInsec) {
+    //     secondsFromAlarm = secondsFromAlarm + (hour -1) * (int32_t) HOUR_IN_SEC;
+    // } else {    
+    //     secondsFromAlarm = secondsFromAlarm + hour * (int32_t) HOUR_IN_SEC;
+    // }
+
+    // if (minuteInSec > 0 && getMinutesOrSecondDiff(alarm.minute, minute) == minuteInSec) {
+
+    //       secondsFromAlarm = secondsFromAlarm + (minuteInSec -1) * (int32_t) MINUTE_IN_SEC; 
+    // } else {            
+    secondsFromAlarm = secondsFromAlarm + minuteInSec; // * (int32_t) MINUTE_IN_SEC;         
+    //}    
+    
+    //if (secondInSec > 0) secondsFromAlarm = secondsFromAlarm + secondInSec; 
+    // secondsFromAlarm = secondsFromAlarm + secondInSec; 
+
+    return secondsFromAlarm;          
 }
