@@ -83,7 +83,7 @@ void updateClockFirstRun(void) {
 
     if (CONFIG_SERIAL > getConfigSerial() && AJUST_CLOCK) {
         RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);            
-            Rtc.SetDateTime(compiled + CLOCK_OFFSET_IN_SEC);        
+        Rtc.SetDateTime(compiled + CLOCK_OFFSET_IN_SEC);        
     }  
 }
 

@@ -42,6 +42,7 @@ Configuration is done with an external software using serial communication.
 #define SPI_MOSI   11    /* connect to the DIN pin of OLED */
 #define SPI_SCK    13     /* connect to the CLK pin of OLED */
 
+const unsigned int MAX_SERIAL_INPUT_LENGTH = 21; // yyyy-mm-dd hh:mm:ss
 
 uint8_t oled_buf[WIDTH * HEIGHT / 8];
 
@@ -49,6 +50,8 @@ uint8_t oled_buf[WIDTH * HEIGHT / 8];
 
 volatile uint16_t interuptCount = 0;
 volatile bool interuptFlag = false;
+
+RtcDateTime now;
 
 int32_t nextAlarm = -1;
 int32_t alarmRunningCountdown = -1;
@@ -96,26 +99,76 @@ void setup() {
     // init settings
     //alarmDuration = getAlarmDuration();
     //getSavedAlarm(sAlarm, MAX_ALARM);
-    printConfig();
+    // printConfig();
 
     // update Serial
     updateSerial();
+
+    // restore time from rtc
+    now = getCurrentDateTime();
     
     // Display init
     SSD1305_begin();
+
+}
+
+void readNewTimeFromSerial () {
+    // read serial buffer for clock update    
+    while (Serial.available() > 0) {
+        //Create a place to hold the incoming message
+        static char message[MAX_SERIAL_INPUT_LENGTH];
+        static unsigned int message_pos = 0;
+
+        //Read the next available byte in the serial receive buffer
+        char inByte = Serial.read();
+
+        //Message coming in (check not terminating character) and guard for over message size
+        if ( inByte != '\n') {
+            //Add the incoming byte to our message
+            message[message_pos] = inByte;
+            message_pos++;
+            //Serial.print(inByte);
+        } else if (message_pos == MAX_SERIAL_INPUT_LENGTH -1 && inByte == '\n') {
+            //Full message received...             
+            //Add null character to string
+            message[message_pos] = '\0';
+
+            //Print the message (or do other things)
+            Serial.println(message);
+
+            // RtcDateTime dateTimeUpdate = RtcDateTime(__DATE__, __TIME__);            
+            // Rtc.SetDateTime(compiled + CLOCK_OFFSET_IN_SEC);  
+            // RtcDateTime update = getCurrentDateTime();
+            //update.
+
+            Serial.print("Nouvelle heure : ");
+            Serial.println(message);
+            
+            //Reset for the next message
+            message_pos = 0;
+        } else {
+            
+            Serial.println("Format de date invalide!");
+            Serial.print("Entrer l'heure actuelle (yyyy-mm-dd hh:mm:ss) : ");
+            message_pos = 0;
+        }                       
+    }
 }
 
 void loop() {
         
     if (interuptFlag) {      
         interuptFlag = false;
-        printRtcError(validRtcTime());
+        //printRtcError(validRtcTime());
 
-        RtcDateTime now = getCurrentDateTime();
+        //now = getCurrentDateTime();
+        now = now + 1;
 
         runAlarmMonitor(now);
         displayTime(now);  
     }    
+
+    readNewTimeFromSerial();    
 }
 
 void runAlarmMonitor (const RtcDateTime& now) {
@@ -186,16 +239,20 @@ void printRtcError(uint8_t rtcErrorCode) {
 
     switch (rtcErrorCode = validRtcTime()) {
         case 1 ... 98:
-          Serial.print("RTC communications error = ");
-          Serial.println(rtcErrorCode);  
-          break; 
+            Serial.println();
+            Serial.print("RTC communications error = ");
+            Serial.println(rtcErrorCode);  
+            Serial.print("Entrer l'heure actuelle (yyyy-mm-dd hh:mm:ss) : ");
+            break; 
 
         case 99:
-          Serial.println("RTC lost confidence in the DateTime!");
-          break;
+            Serial.println();
+            Serial.println("RTC lost confidence in the DateTime!");
+            Serial.print("Entrer l'heure actuelle (yyyy-mm-dd hh:mm:ss) : ");
+            break;
 
         default:
-          break;
+            break;
     }  
 }
 
@@ -279,39 +336,48 @@ int32_t selectNextAlarm(const RtcDateTime& now) {
     uint32_t remainingSecondBeforeNextAlarm = -1;
     uint32_t secondFromNow;
 
+    scheduledAlarm_t* selectedAlarm;
+
     for (int i=0; i < MAX_ALARM; i++) {
         if (sAlarm[i].enable == 1) {
             secondFromNow = getSecondstoAlarm(sAlarm[i], now.DayOfWeek(), now.Hour(), now.Minute(), now.Second());
-            Serial.print("Alarm time : ");
+            // Serial.println();
+            // Serial.print("Alarm time : ");
                         
-            Serial.print(sAlarm[i].dayOfWeek);
-            Serial.print("  ");
-            Serial.print(sAlarm[i].hour);
-            Serial.print(":");
-            Serial.print(sAlarm[i].minute);
+            // Serial.print(sAlarm[i].dayOfWeek);
+            // Serial.print("  ");
+            // Serial.print(sAlarm[i].hour);
+            // Serial.print(":");
+            // Serial.print(sAlarm[i].minute);
             
-            Serial.print(" Now in sec: ");
-            Serial.print(getNumberOfSeconds((scheduledAlarm_t){1, now.DayOfWeek(), now.Hour(), now.Minute()}, now.Second()));
-            Serial.print(" Alarm in Second: ");
-            Serial.print(getNumberOfSeconds(sAlarm[i], now.Second()));
-            Serial.print(" Second from now: ");
-            Serial.println(secondFromNow);
+            // Serial.print(" Now in sec: ");
+            // Serial.print(getNumberOfSeconds((scheduledAlarm_t){1, now.DayOfWeek(), now.Hour(), now.Minute()}, now.Second()));
+            // Serial.print(" Alarm in Second: ");
+            // Serial.print(getNumberOfSeconds(sAlarm[i], now.Second()));
+            // Serial.print(" Second from now: ");
+            // Serial.println(secondFromNow);
             
 
             if (remainingSecondBeforeNextAlarm == 0 || remainingSecondBeforeNextAlarm > secondFromNow) {
-
-                remainingSecondBeforeNextAlarm = secondFromNow;
-                Serial.print("Set new next alarm in ");
-                Serial.print(remainingSecondBeforeNextAlarm);
-                Serial.print(" at ");
-                Serial.print(sAlarm[i].dayOfWeek);
-                Serial.print("  ");
-                Serial.print(sAlarm[i].hour);
-                Serial.print(":");
-                Serial.println(sAlarm[i].minute);                
+                remainingSecondBeforeNextAlarm = secondFromNow;               
+                selectedAlarm = &sAlarm[i];
             } 
         }
     } 
+
+    Serial.println();
+    Serial.print("Prochaine alarme dans : ");
+    Serial.print(remainingSecondBeforeNextAlarm);
+    Serial.print(" sec. = {");
+    Serial.print(selectedAlarm->dayOfWeek);
+    Serial.print(",");
+    Serial.print(selectedAlarm->hour);
+    Serial.print(",");
+    Serial.print(selectedAlarm->minute);      
+    Serial.println("}");
+    Serial.println();
+    
+    Serial.print("Entrer l'heure actuelle (yyyy-mm-dd hh:mm:ss) : ");
 
     return remainingSecondBeforeNextAlarm;    
 }
