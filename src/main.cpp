@@ -27,9 +27,12 @@ Configuration is done with an external software using serial communication.
 #include "timeClockControllerCalc.h"
 #include "defaultConfiguration.h"
 
+#define VERSION "1.0.1"
+#define ENTER_TIME_MSG "Entrer l'heure actuelle (yyyy-mm-dd hh:mm:ss) : "
+
 // relay config
 #define RELAY_PIN_TONE_1 4
-//#define RELAY_PIN_TONE_2 5
+#define RELAY_PIN_TONE_2 5
 
 // Display configuration
 #define WIDTH     128
@@ -68,6 +71,7 @@ void printRtcError(uint8_t rtcErrorCode);
 void displayTime (const RtcDateTime& now);
 void printConfig (void);
 int32_t selectNextAlarm(const RtcDateTime& now);
+void printVersion(void);
 
 void ISR_ATTR InteruptServiceRoutine()
 {
@@ -82,7 +86,7 @@ void setup() {
 
     // initialize digital pin as an output.
     pinMode(RELAY_PIN_TONE_1, OUTPUT);
-    // pinMode(RELAY_PIN_TONE_2, OUTPUT);
+    pinMode(RELAY_PIN_TONE_2, OUTPUT);
 
     // set the interupt pin to input mode
     pinMode(RtcSquareWavePin, INPUT);
@@ -102,13 +106,19 @@ void setup() {
     // printConfig();
 
     // update Serial
-    updateSerial();
+    //updateSerial();
 
     // restore time from rtc
     now = getCurrentDateTime();
+    printRtcError(validRtcTime());
     
     // Display init
     SSD1305_begin();
+
+    printVersion();
+
+    //digitalWrite(RELAY_PIN_TONE_1, HIGH);
+    //digitalWrite(RELAY_PIN_TONE_2, HIGH);
 
 }
 
@@ -143,13 +153,15 @@ void readNewTimeFromSerial () {
 
             Serial.print("Nouvelle heure : ");
             Serial.println(message);
+            Serial.println();
+            Serial.print(ENTER_TIME_MSG);
             
             //Reset for the next message
             message_pos = 0;
         } else {
             
             Serial.println("Format de date invalide!");
-            Serial.print("Entrer l'heure actuelle (yyyy-mm-dd hh:mm:ss) : ");
+            Serial.print(ENTER_TIME_MSG);
             message_pos = 0;
         }                       
     }
@@ -159,9 +171,7 @@ void loop() {
         
     if (interuptFlag) {      
         interuptFlag = false;
-        //printRtcError(validRtcTime());
-
-        //now = getCurrentDateTime();
+        
         now = now + 1;
 
         runAlarmMonitor(now);
@@ -197,10 +207,10 @@ void runAlarmMonitor (const RtcDateTime& now) {
 
 void printConfig(void) {
     // print config serial
-    Serial.print("EPROMM config serial : ");
-    Serial.print(getConfigSerial());
-    Serial.print(" Config Serial : ");
-    Serial.println(CONFIG_SERIAL);
+    //Serial.print("EPROMM config serial : ");
+    //Serial.print(getConfigSerial());
+    //Serial.print(" Config Serial : ");
+    //Serial.println(CONFIG_SERIAL);
 
     // print alarm duration
     Serial.print("Alarm duration : ");
@@ -216,6 +226,19 @@ void printConfig(void) {
         Serial.print(" ");
         Serial.println(sAlarm[i].minute);
     }
+}
+
+void printVersion() {
+
+    SSD1305_clear(oled_buf);
+    SSD1305_string(30, 2, VERSION, 12, 1, oled_buf);    
+    SSD1305_display(oled_buf);  
+
+    Serial.println();
+    Serial.println("-----------------------------------------");
+    Serial.print("Time clock Controller v");
+    Serial.println(VERSION);
+    Serial.println("-----------------------------------------");
 }
 
 void printDateTime(const RtcDateTime& dt) {
@@ -242,13 +265,13 @@ void printRtcError(uint8_t rtcErrorCode) {
             Serial.println();
             Serial.print("RTC communications error = ");
             Serial.println(rtcErrorCode);  
-            Serial.print("Entrer l'heure actuelle (yyyy-mm-dd hh:mm:ss) : ");
+            Serial.print(ENTER_TIME_MSG);
             break; 
 
         case 99:
             Serial.println();
             Serial.println("RTC lost confidence in the DateTime!");
-            Serial.print("Entrer l'heure actuelle (yyyy-mm-dd hh:mm:ss) : ");
+            Serial.print(ENTER_TIME_MSG);
             break;
 
         default:
@@ -377,7 +400,7 @@ int32_t selectNextAlarm(const RtcDateTime& now) {
     Serial.println("}");
     Serial.println();
     
-    Serial.print("Entrer l'heure actuelle (yyyy-mm-dd hh:mm:ss) : ");
+    Serial.print(ENTER_TIME_MSG);
 
     return remainingSecondBeforeNextAlarm;    
 }

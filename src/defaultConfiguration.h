@@ -45,17 +45,16 @@
 
 
 // MUST BE INCREMENTED TO +1 FOR CONFIG TO BE WRITTEN
-#define CONFIG_SERIAL 11
+#define CONFIG_SERIAL 15
 #define MAX_ALARM 25
 #define ALARM_DURATION_IN_SEC 3
 
 // Set to 1 to ajust clock when uploading code. 
-// **! Serial must be incremented !**
-#define AJUST_CLOCK 1
+#define AJUST_CLOCK 0
 
 // Clock is set from compiled time. It should be a little bit behind real time.
 // Ajust the difference, and upload code again.
-#define CLOCK_OFFSET_IN_SEC 14
+#define CLOCK_OFFSET_IN_SEC 7
 
 // Array of alarms.
 // Format is 255 for all

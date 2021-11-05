@@ -12,17 +12,17 @@
 
 
 RtcDS3231<TwoWire> Rtc(Wire);
-EepromAt24c32<TwoWire> RtcEeprom(Wire);
+//EepromAt24c32<TwoWire> RtcEeprom(Wire);
 
 void updateClockFirstRun(void);
-void restoreFactorySchedule(void);
+//void restoreFactorySchedule(void);
 
 uint8_t init_rtcManager(void) {
 
     uint8_t errorCode = 0;
   
     // start Memory chip 
-    RtcEeprom.Begin();
+    //RtcEeprom.Begin();
 
     // start Rtc chip 
     Rtc.Begin();    
@@ -44,7 +44,7 @@ uint8_t init_rtcManager(void) {
     Rtc.Enable32kHzPin(false);
     Rtc.SetSquareWavePin(DS3231SquareWavePin_ModeClock, false); 
 
-    restoreFactorySchedule();
+    //restoreFactorySchedule();
 
     return errorCode;
 }
@@ -81,55 +81,57 @@ uint8_t validRtcTime(void) {
 
 void updateClockFirstRun(void) {
 
-    if (CONFIG_SERIAL > getConfigSerial() && AJUST_CLOCK) {
+    //if (CONFIG_SERIAL > getConfigSerial() && AJUST_CLOCK) {
+    if (AJUST_CLOCK == 1) {        
         RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);            
         Rtc.SetDateTime(compiled + CLOCK_OFFSET_IN_SEC);        
     }  
 }
 
 uint8_t getAlarmDuration(void) {
-    return RtcEeprom.GetMemory(ALARM_DURATION_ADDRESS);
+    //return RtcEeprom.GetMemory(ALARM_DURATION_ADDRESS);
+    return (uint8_t) ALARM_DURATION_IN_SEC;
 }
 
-uint8_t getConfigSerial(void) {
-    return RtcEeprom.GetMemory(SERIAL_ADDRESS);
-}
+// uint8_t getConfigSerial(void) {
+//     return RtcEeprom.GetMemory(SERIAL_ADDRESS);
+// }
 
-void getSavedAlarm(scheduledAlarm_t* scheduledAlarm, int alarmNumber) {
+// void getSavedAlarm(scheduledAlarm_t* scheduledAlarm, int alarmNumber) {
 
-    uint8_t buff[4];
-    for (int i=ALARM_START_ADDRESS; i < alarmNumber + ALARM_START_ADDRESS; i++ ){
-        buff[4] = RtcEeprom.GetMemory(i, buff, 4);
-        scheduledAlarm[i-ALARM_START_ADDRESS].enable = buff[0];
-        scheduledAlarm[i-ALARM_START_ADDRESS].dayOfWeek = buff[1];
-        scheduledAlarm[i-ALARM_START_ADDRESS].hour = buff[2];
-        scheduledAlarm[i-ALARM_START_ADDRESS].minute = buff[3];
-    }
-}
+//     uint8_t buff[4];
+//     for (int i=ALARM_START_ADDRESS; i < alarmNumber + ALARM_START_ADDRESS; i++ ){
+//         buff[4] = RtcEeprom.GetMemory(i, buff, 4);
+//         scheduledAlarm[i-ALARM_START_ADDRESS].enable = buff[0];
+//         scheduledAlarm[i-ALARM_START_ADDRESS].dayOfWeek = buff[1];
+//         scheduledAlarm[i-ALARM_START_ADDRESS].hour = buff[2];
+//         scheduledAlarm[i-ALARM_START_ADDRESS].minute = buff[3];
+//     }
+// }
 
-void restoreFactorySchedule(void) {
+// void restoreFactorySchedule(void) {
 
-    if (CONFIG_SERIAL > getConfigSerial()) {
+//     if (CONFIG_SERIAL > getConfigSerial()) {
 
-        scheduledAlarm_t myAlarm[] = FACTORY_ALARM;            
-        RtcEeprom.SetMemory(ALARM_DURATION_ADDRESS, ALARM_DURATION_IN_SEC); // store the 
+//         scheduledAlarm_t myAlarm[] = FACTORY_ALARM;            
+//         RtcEeprom.SetMemory(ALARM_DURATION_ADDRESS, ALARM_DURATION_IN_SEC); // store the 
 
-        uint8_t buff[4];
-        for (int i=ALARM_START_ADDRESS; i < MAX_ALARM+ALARM_START_ADDRESS; i++) {
-            buff[0] = myAlarm[i-ALARM_START_ADDRESS].enable;
-            buff[1] = myAlarm[i-ALARM_START_ADDRESS].dayOfWeek;
-            buff[2] = myAlarm[i-ALARM_START_ADDRESS].hour;
-            buff[3] = myAlarm[i-ALARM_START_ADDRESS].minute;
+//         uint8_t buff[4];
+//         for (int i=ALARM_START_ADDRESS; i < MAX_ALARM+ALARM_START_ADDRESS; i++) {
+//             buff[0] = myAlarm[i-ALARM_START_ADDRESS].enable;
+//             buff[1] = myAlarm[i-ALARM_START_ADDRESS].dayOfWeek;
+//             buff[2] = myAlarm[i-ALARM_START_ADDRESS].hour;
+//             buff[3] = myAlarm[i-ALARM_START_ADDRESS].minute;
 
-            RtcEeprom.SetMemory(i, (const uint8_t*)buff, 4); // store the 
-        }
-    }   
-}
+//             RtcEeprom.SetMemory(i, (const uint8_t*)buff, 4); // store the 
+//         }
+//     }   
+// }
 
-void updateSerial (void) {
-    if (CONFIG_SERIAL > getConfigSerial()) {
-        RtcEeprom.SetMemory(SERIAL_ADDRESS, CONFIG_SERIAL); 
-    }    
-}
+// void updateSerial (void) {
+//     if (CONFIG_SERIAL > getConfigSerial()) {
+//         RtcEeprom.SetMemory(SERIAL_ADDRESS, CONFIG_SERIAL); 
+//     }    
+// }
 
 #endif

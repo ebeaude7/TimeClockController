@@ -35,11 +35,11 @@
 uint8_t init_rtcManager(void);
 uint8_t validRtcTime(void);
 
-uint8_t getConfigSerial(void);
 uint8_t getAlarmDuration(void);
-void getSavedAlarm(scheduledAlarm_t* scheduledAlarm, int alarmNumber);
-
 RtcDateTime getCurrentDateTime(void);
-void updateSerial (void);
+
+// void getSavedAlarm(scheduledAlarm_t* scheduledAlarm, int alarmNumber);
+//uint8_t getConfigSerial(void);
+// void updateSerial (void);
 
 #endif
