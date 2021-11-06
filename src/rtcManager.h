@@ -11,7 +11,7 @@
 
 #include <Wire.h>
 #include <RtcDS3231.h>
-#include <EepromAT24C32.h>
+//#include <EepromAT24C32.h>
 #include "defaultConfiguration.h"
 
 // Interrupt Pin Lookup Table
@@ -37,6 +37,9 @@ uint8_t validRtcTime(void);
 
 uint8_t getAlarmDuration(void);
 RtcDateTime getCurrentDateTime(void);
+
+RtcDateTime getDateTimeFromString(const char* datetime);
+void setTimeFromRtcDateTime(const RtcDateTime& dt);
 
 // void getSavedAlarm(scheduledAlarm_t* scheduledAlarm, int alarmNumber);
 //uint8_t getConfigSerial(void);

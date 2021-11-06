@@ -93,45 +93,132 @@ uint8_t getAlarmDuration(void) {
     return (uint8_t) ALARM_DURATION_IN_SEC;
 }
 
-// uint8_t getConfigSerial(void) {
-//     return RtcEeprom.GetMemory(SERIAL_ADDRESS);
-// }
+/**
+ * Expect a string of "yyyy-mm-jj hh:mm:ss"
+*/
+RtcDateTime getDateTimeFromString(const char* datetime) {
 
-// void getSavedAlarm(scheduledAlarm_t* scheduledAlarm, int alarmNumber) {
+    // sample input: date = "Dec 06 2009", time = "12:34:56"
+    char time[9];
+    char date[12];
+    
+    time[0] = datetime[11];
+    time[1] = datetime[12];
+    time[2] = datetime[13];
+    time[3] = datetime[14];
+    time[4] = datetime[15];
+    time[5] = datetime[16];
+    time[6] = datetime[17];
+    time[7] = datetime[18];
+    time[8] = '\0';
 
-//     uint8_t buff[4];
-//     for (int i=ALARM_START_ADDRESS; i < alarmNumber + ALARM_START_ADDRESS; i++ ){
-//         buff[4] = RtcEeprom.GetMemory(i, buff, 4);
-//         scheduledAlarm[i-ALARM_START_ADDRESS].enable = buff[0];
-//         scheduledAlarm[i-ALARM_START_ADDRESS].dayOfWeek = buff[1];
-//         scheduledAlarm[i-ALARM_START_ADDRESS].hour = buff[2];
-//         scheduledAlarm[i-ALARM_START_ADDRESS].minute = buff[3];
-//     }
-// }
+    date[3] = ' ';
+    if (datetime[8] == '0') {
+        date[4] = ' ';
+    } else {
+        date[4] = datetime[8];
+    }
+    
+    date[5] = datetime[9];
+    date[6] = ' ';
+    date[7] = datetime[0];
+    date[8] = datetime[1];
+    date[9] = datetime[2];
+    date[10] = datetime[3];
+    date[11] = '\0';
 
-// void restoreFactorySchedule(void) {
 
-//     if (CONFIG_SERIAL > getConfigSerial()) {
+    switch (datetime[5]) {
+        case '0' :
+            switch (datetime[6]) {
+                case '1' : 
+                    date[0] = 'J';
+                    date[1] = 'a';
+                    date[2] = 'n';
+                    break;
 
-//         scheduledAlarm_t myAlarm[] = FACTORY_ALARM;            
-//         RtcEeprom.SetMemory(ALARM_DURATION_ADDRESS, ALARM_DURATION_IN_SEC); // store the 
+                case '2' : 
+                    date[0] = 'F';
+                    date[1] = 'e';
+                    date[2] = 'b';
+                    break;
 
-//         uint8_t buff[4];
-//         for (int i=ALARM_START_ADDRESS; i < MAX_ALARM+ALARM_START_ADDRESS; i++) {
-//             buff[0] = myAlarm[i-ALARM_START_ADDRESS].enable;
-//             buff[1] = myAlarm[i-ALARM_START_ADDRESS].dayOfWeek;
-//             buff[2] = myAlarm[i-ALARM_START_ADDRESS].hour;
-//             buff[3] = myAlarm[i-ALARM_START_ADDRESS].minute;
+                case '3' : 
+                    date[0] = 'M';
+                    date[1] = 'a';
+                    date[2] = 'r';
+                    break;
 
-//             RtcEeprom.SetMemory(i, (const uint8_t*)buff, 4); // store the 
-//         }
-//     }   
-// }
+                case '4' : 
+                    date[0] = 'A';
+                    date[1] = 'p';
+                    date[2] = 'r';
+                    break;
 
-// void updateSerial (void) {
-//     if (CONFIG_SERIAL > getConfigSerial()) {
-//         RtcEeprom.SetMemory(SERIAL_ADDRESS, CONFIG_SERIAL); 
-//     }    
-// }
+                case '5' : 
+                    date[0] = 'M';
+                    date[1] = 'a';
+                    date[2] = 'y';
+                    break;
+
+                case '6' : 
+                    date[0] = 'J';
+                    date[1] = 'u';
+                    date[2] = 'n';
+                    break;
+
+                case '7' : 
+                    date[0] = 'J';
+                    date[1] = 'u';
+                    date[2] = 'l';
+                    break;
+
+                case '8' : 
+                    date[0] = 'A';
+                    date[1] = 'u';
+                    date[2] = 'g';
+                    break;
+
+                case '9' : 
+                    date[0] = 'S';
+                    date[1] = 'e';
+                    date[2] = 'p';
+                    break;                                        
+            }
+        break;
+
+        case '1' :
+            switch (datetime[6]) {
+                case '0' : 
+                    date[0] = 'O';
+                    date[1] = 'c';
+                    date[2] = 't';
+                    break;
+
+                case '1' : 
+                    date[0] = 'N';
+                    date[1] = 'o';
+                    date[2] = 'v';
+                    break;
+
+                case '2' : 
+                    date[0] = 'D';
+                    date[1] = 'e';
+                    date[2] = 'c';
+                    break;                                        
+            }        
+        break;
+    }
+
+    return RtcDateTime(date, time);
+}
+
+/**
+ * Expect a string of "yyyy-mm-jj hh:mm:ss"
+*/
+void setTimeFromRtcDateTime(const RtcDateTime& dt) {   
+    delay (2);
+    Rtc.SetDateTime(dt);  
+}
 
 #endif

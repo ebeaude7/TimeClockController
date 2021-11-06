@@ -50,11 +50,11 @@
 #define ALARM_DURATION_IN_SEC 3
 
 // Set to 1 to ajust clock when uploading code. 
-#define AJUST_CLOCK 0
+#define AJUST_CLOCK 1
 
 // Clock is set from compiled time. It should be a little bit behind real time.
 // Ajust the difference, and upload code again.
-#define CLOCK_OFFSET_IN_SEC 7
+#define CLOCK_OFFSET_IN_SEC 6
 
 // Array of alarms.
 // Format is 255 for all

@@ -137,7 +137,7 @@ void readNewTimeFromSerial () {
             //Add the incoming byte to our message
             message[message_pos] = inByte;
             message_pos++;
-            //Serial.print(inByte);
+            Serial.print(inByte);
         } else if (message_pos == MAX_SERIAL_INPUT_LENGTH -1 && inByte == '\n') {
             //Full message received...             
             //Add null character to string
@@ -146,18 +146,24 @@ void readNewTimeFromSerial () {
             //Print the message (or do other things)
             Serial.println(message);
 
-            // RtcDateTime dateTimeUpdate = RtcDateTime(__DATE__, __TIME__);            
-            // Rtc.SetDateTime(compiled + CLOCK_OFFSET_IN_SEC);  
-            // RtcDateTime update = getCurrentDateTime();
-            //update.
+            // Update rtc    
+            RtcDateTime newTime = getDateTimeFromString(message);                    
+            setTimeFromRtcDateTime(newTime);                        
+                        
+            // update clock
+            now = newTime;
 
+            printDateTime(now);
+                
             Serial.print("Nouvelle heure : ");
             Serial.println(message);
             Serial.println();
-            Serial.print(ENTER_TIME_MSG);
+            Serial.print(ENTER_TIME_MSG);            
             
             //Reset for the next message
             message_pos = 0;
+
+            nextAlarm = selectNextAlarm(now);
         } else {
             
             Serial.println("Format de date invalide!");
@@ -364,22 +370,6 @@ int32_t selectNextAlarm(const RtcDateTime& now) {
     for (int i=0; i < MAX_ALARM; i++) {
         if (sAlarm[i].enable == 1) {
             secondFromNow = getSecondstoAlarm(sAlarm[i], now.DayOfWeek(), now.Hour(), now.Minute(), now.Second());
-            // Serial.println();
-            // Serial.print("Alarm time : ");
-                        
-            // Serial.print(sAlarm[i].dayOfWeek);
-            // Serial.print("  ");
-            // Serial.print(sAlarm[i].hour);
-            // Serial.print(":");
-            // Serial.print(sAlarm[i].minute);
-            
-            // Serial.print(" Now in sec: ");
-            // Serial.print(getNumberOfSeconds((scheduledAlarm_t){1, now.DayOfWeek(), now.Hour(), now.Minute()}, now.Second()));
-            // Serial.print(" Alarm in Second: ");
-            // Serial.print(getNumberOfSeconds(sAlarm[i], now.Second()));
-            // Serial.print(" Second from now: ");
-            // Serial.println(secondFromNow);
-            
 
             if (remainingSecondBeforeNextAlarm == 0 || remainingSecondBeforeNextAlarm > secondFromNow) {
                 remainingSecondBeforeNextAlarm = secondFromNow;               
