@@ -27,7 +27,7 @@ Configuration is done with an external software using serial communication.
 #include "timeClockControllerCalc.h"
 #include "defaultConfiguration.h"
 
-#define VERSION "1.0.1"
+#define VERSION "1.0.2"
 #define ENTER_TIME_MSG "Entrer l'heure actuelle (yyyy-mm-dd hh:mm:ss) : "
 
 // relay config
@@ -182,6 +182,8 @@ void loop() {
 
         runAlarmMonitor(now);
         displayTime(now);  
+
+        //printRtcError(validRtcTime());
     }    
 
     readNewTimeFromSerial();    

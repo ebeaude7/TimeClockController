@@ -63,14 +63,13 @@ uint8_t validRtcTime(void) {
             // we have a communications error
             // see https://www.arduino.cc/en/Reference/WireEndTransmission for 
             // what the number means
-            // Serial.print("RTC communications error = ");
-            // Serial.println(Rtc.LastError());
+             Serial.print("RTC communications error = ");
+             Serial.println(Rtc.LastError());
             errorCode = Rtc.LastError();
         }
         else
         {
-            // Serial.println("RTC lost confidence in the DateTime!");
-            // Rtc.SetDateTime(compiled);
+            Serial.println("RTC lost confidence in the DateTime!");            
             errorCode = 99;
         }
     }    

@@ -24,7 +24,7 @@
 
 /**
  * Wiring reference for the siren :
- *
+ *200
  * How Do I Connect Red, Yellow, & White Wires To a Siren?
  * The following is instructions to connect wires from a hardwired siren.
  *
@@ -50,7 +50,7 @@
 #define ALARM_DURATION_IN_SEC 3
 
 // Set to 1 to ajust clock when uploading code. 
-#define AJUST_CLOCK 1
+#define AJUST_CLOCK 0
 
 // Clock is set from compiled time. It should be a little bit behind real time.
 // Ajust the difference, and upload code again.
